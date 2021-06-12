@@ -33,12 +33,8 @@ class SecondFragment : Fragment() {
     private var _binding: FragmentSecondBinding? = null
     private val binding get() = _binding!!
 
-    //    var listAdapter: ExpandableListAdapter? = null
-//    var expListView: ExpandableListView? = null
     var listDataHeader: ArrayList<String> = arrayListOf()
-    var listDataNotes: HashMap<String, List<String>>? = hashMapOf()
-
-    //    var listDataChild: HashMap<String, List<String>>? = null
+    //var listDataNotes: HashMap<String, List<String>>? = hashMapOf()
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
@@ -51,16 +47,15 @@ class SecondFragment : Fragment() {
         var notes = gson.fromJson(notesStr, Array<Note>::class.java).asList()
 
         for (i in 0 until notes.size - 1) {
-            //println("i = $i")
-            var title = notes[i].title
-            //println(title)
-            listDataHeader.add(title)
-            var noteList: MutableList<String> = mutableListOf()
-            noteList.add("id:" + notes[i].id.toString())
-            noteList.add("userId:" + notes[i].userId.toString())
-            noteList.add("title: " + notes[i].title)
-            noteList.add("body" + notes[i].body)
-            listDataNotes!!.put(notes[i].id.toString(), noteList) //for future use
+
+            var id = "id:" + notes[i].id.toString()
+            var userId = "userId:" + notes[i].userId.toString()
+            var title = "title: " + notes[i].title
+            var body = "body" + notes[i].body
+
+            var header = id + "\n" + userId + "\n" + title + "\n" + body
+            listDataHeader.add(header)
+            //listDataNotes!!.put(notes[i].id.toString(), listDataHeader) //for future use
         }
 
         var commentsByte = bundle!!.getByteArray("comments")
@@ -75,7 +70,7 @@ class SecondFragment : Fragment() {
             var currentPostId = comments[i].postId
 
             if (postId == currentPostId) {
-                //commentStr includes postId, id, name, email, body
+                //comment includes postId, id, name, email, body
                 var comment =
                     "postId: " + currentPostId.toString() + "\n" + "id: " + comments[i].id.toString() + "\n" + "name: " + comments[i].name + "\n" + "email: " + comments[i].email + "\n" + "body: " + comments[i].body
                 commentList.add(comment)
