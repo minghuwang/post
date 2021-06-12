@@ -14,8 +14,9 @@ class CustomExpandableListAdapter internal constructor(
     private val dataList: HashMap<String, List<String>>
 ) : BaseExpandableListAdapter() {
     override fun getChild(listPosition: Int, expandedListPosition: Int): Any {
-        println("getChild")
-        return this.dataList[this.titleList[listPosition]]!![expandedListPosition]
+        println("getChild: listPosition = $listPosition, expandedListPosition = $expandedListPosition")
+        //postId starts from 1 and this only affect child
+        return this.dataList[(listPosition+1).toString()]!![expandedListPosition]
     }
     override fun getChildId(listPosition: Int, expandedListPosition: Int): Long {
         println("getChildId")
@@ -28,22 +29,22 @@ class CustomExpandableListAdapter internal constructor(
         convertView: View?,
         parent: ViewGroup
     ): View {
-        println("getChildView")
+        println("getChildView listPosition = $listPosition +1, expandedListPosition = $expandedListPosition")
         var convertView = convertView
         val expandedListText = getChild(listPosition, expandedListPosition) as String
         if (convertView == null) {
             val layoutInflater =
                 this.context.getSystemService(Context.LAYOUT_INFLATER_SERVICE) as LayoutInflater
-            convertView = layoutInflater.inflate(R.layout.list_item, null)
+            convertView = layoutInflater.inflate(R.layout.list_comments, null)
         }
         val expandedListTextView = convertView!!.findViewById<TextView>(
-            R.id.expandedListItem)
+            R.id.comment)
         expandedListTextView.text = expandedListText
         return convertView
     }
     override fun getChildrenCount(listPosition: Int): Int {
-        println("getChildrenCount")
-        return this.dataList[this.titleList[listPosition]]!!.size
+        println("getChildrenCount listPosition =$listPosition")
+        return this.dataList[(listPosition+1).toString()]!!.size
     }
     override fun getGroup(listPosition: Int): Any {
         println("getGroup")
@@ -59,21 +60,21 @@ class CustomExpandableListAdapter internal constructor(
         convertView: View?,
         parent: ViewGroup
     ): View {
-        println("getGroupView")
+        println("getGroupView listPosition = $listPosition, isExpanded = $isExpanded")
         var convertView = convertView
         val listTitle = getGroup(listPosition) as String
         if (convertView == null) {
             val layoutInflater =
                 this.context.getSystemService(Context.LAYOUT_INFLATER_SERVICE) as LayoutInflater
-            convertView = layoutInflater.inflate(R.layout.list_item, null)
+            convertView = layoutInflater.inflate(R.layout.list_notes, null)
         }
-        val listTitleTextView = convertView!!.findViewById<TextView>(R.id.expandedListItem)
-        listTitleTextView.setTypeface(null, Typeface.BOLD)
-        listTitleTextView.text = listTitle
+        val listTitleTextViewNodeTitle = convertView!!.findViewById<TextView>(R.id.note_title)
+        listTitleTextViewNodeTitle.setTypeface(null, Typeface.BOLD)
+        listTitleTextViewNodeTitle.text = listTitle
         return convertView
     }
     override fun getGroupId(listPosition: Int): Long {
-        println("getGroupId")
+        println("getGroupId listPosition = $listPosition")
         return listPosition.toLong()
     }
     override fun hasStableIds(): Boolean {

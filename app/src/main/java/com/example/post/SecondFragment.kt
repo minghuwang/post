@@ -4,8 +4,6 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.ExpandableListAdapter
-import android.widget.ExpandableListView
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import com.example.post.databinding.FragmentSecondBinding
@@ -15,10 +13,18 @@ import com.google.gson.Gson
 /**
  * A simple [Fragment] subclass as the second destination in the navigation.
  */
-data class UserInfo(
+data class Note(
     val userId: Int,
     val id: Int,
     val title: String,
+    val body: String
+)
+
+data class Comment(
+    val postId: Int,
+    val id: Int,
+    val name: String,
+    val email: String,
     val body: String
 )
 
@@ -26,35 +32,58 @@ class SecondFragment : Fragment() {
 
     private var _binding: FragmentSecondBinding? = null
     private val binding get() = _binding!!
-    var listAdapter: ExpandableListAdapter? = null
-    var expListView: ExpandableListView? = null
-    var listDataHeader: List<String>? = null
-    var listDataChild: HashMap<String, List<String>>? = null
+
+    //    var listAdapter: ExpandableListAdapter? = null
+//    var expListView: ExpandableListView? = null
+    var listDataHeader: ArrayList<String> = arrayListOf()
+    var listDataNotes: HashMap<String, List<String>>? = hashMapOf()
+
+    //    var listDataChild: HashMap<String, List<String>>? = null
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
         _binding = FragmentSecondBinding.inflate(inflater, container, false)
-       var bundle = getArguments()
-        var byteArray = bundle!!.getByteArray("byteArray")
-        val str = String(byteArray!!)
         val gson = Gson()
+        var bundle = getArguments()
+        var notesByte = bundle!!.getByteArray("notes")
+        val notesStr = String(notesByte!!)
+        var notes = gson.fromJson(notesStr, Array<Note>::class.java).asList()
 
-        var userInfos = gson.fromJson(str, Array<UserInfo>::class.java).asList()
-
-        var listDataHeader = arrayListOf<String>()
-        var listDataChild = hashMapOf<String, List<String>>()
-        for (i in 0 until userInfos.size-1) {
+        for (i in 0 until notes.size - 1) {
             //println("i = $i")
-            var title = userInfos[i].title
+            var title = notes[i].title
             //println(title)
             listDataHeader.add(title)
-            var info: MutableList<String> = mutableListOf()
-            info.add(userInfos[i].id.toString())
-            info.add(userInfos[i].userId.toString())
-            info.add(userInfos[i].title)
-            info.add(userInfos[i].body)
-            listDataChild.put(title, info)
+            var noteList: MutableList<String> = mutableListOf()
+            noteList.add("id:" + notes[i].id.toString())
+            noteList.add("userId:" + notes[i].userId.toString())
+            noteList.add("title: " + notes[i].title)
+            noteList.add("body" + notes[i].body)
+            listDataNotes!!.put(notes[i].id.toString(), noteList) //for future use
+        }
+
+        var commentsByte = bundle!!.getByteArray("comments")
+        val commentsStr = String(commentsByte!!)
+        var comments = gson.fromJson(commentsStr, Array<Comment>::class.java).asList()
+        var listDataChild = hashMapOf<String, List<String>>() //comments
+        //postId start from 1
+        var postId = comments[0].postId
+        var commentList: MutableList<String> = mutableListOf()
+        for (i in 0 until comments.size - 1) {
+            //Each time get post id, if it is the same as previous one, add into one commentList
+            var currentPostId = comments[i].postId
+
+            if (postId == currentPostId) {
+                //commentStr includes postId, id, name, email, body
+                var comment =
+                    "postId: " + currentPostId.toString() + "\n" + "id: " + comments[i].id.toString() + "\n" + "name: " + comments[i].name + "\n" + "email: " + comments[i].email + "\n" + "body: " + comments[i].body
+                commentList.add(comment)
+            } else {
+                listDataChild.put(postId.toString(), commentList)
+                postId = currentPostId
+                commentList = mutableListOf()
+            }
         }
 
         val adapter = CustomExpandableListAdapter(requireContext(), listDataHeader, listDataChild)

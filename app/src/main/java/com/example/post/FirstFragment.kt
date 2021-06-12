@@ -41,8 +41,6 @@ class FirstFragment : Fragment() {
         return binding.root
     }
 
-
-
     private lateinit var listView: ListView
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -55,7 +53,7 @@ class FirstFragment : Fragment() {
         runBlocking {
             println("start: ${Thread.currentThread().name}")
             // Todo: connect to server and get the post/comments
-            var result = GlobalScope.async {
+            var notes = GlobalScope.async {
                 println("async start: ${Thread.currentThread().name}")
                 val httpClient = HttpClient(Android)
                 try {
@@ -67,14 +65,9 @@ class FirstFragment : Fragment() {
                         }
                     if (resp.status == HttpStatusCode.OK) {
                         println("resp.status == HttpStatusCode.OK")
-                        val parser: Parser = Parser.default()
+//                        val parser: Parser = Parser.default()
                         val bytes: ByteArray = resp.readBytes()
-                        println("bundle.putBtyeArray..begin")
-                        bundle.putByteArray("byteArray", bytes)
-                        println("bundle.putBtyeArray..end")
-                        binding.buttonFirst.setOnClickListener {
-                            findNavController().navigate(R.id.action_FirstFragment_to_SecondFragment, bundle)
-                        }
+                        bundle.putByteArray("notes", bytes)
                     } else {
                         println("httpStatusCode:")
                         println(resp.status)
@@ -89,7 +82,40 @@ class FirstFragment : Fragment() {
                 println("async end: ${Thread.currentThread().name}")
 
             }
-            result.join()
+            notes.join()
+            var comments = GlobalScope.async {
+                val httpClient = HttpClient(Android)
+                try {
+                    var resp =
+                        httpClient.get<HttpResponse>("https://jsonplaceholder.typicode.com/comments") {
+                            headers {
+                                append("Accept", "application/json")
+                            }
+                        }
+                    if (resp.status == HttpStatusCode.OK) {
+                        println("comments: resp.status == HttpStatusCode.OK")
+                        val parser: Parser = Parser.default()
+                        val bytes: ByteArray = resp.readBytes()
+                        bundle.putByteArray("comments", bytes)
+
+                    } else {
+                        println("httpStatusCode:")
+                        println(resp.status)
+                    }
+                    httpClient.close()
+                } catch (e: java.net.UnknownHostException) {
+                    println("exception of http")
+                    println(e)
+                }
+
+                // Thread.sleep(1000)
+                println("async end: ${Thread.currentThread().name}")
+
+            }
+            comments.join()
+            binding.buttonFirst.setOnClickListener {
+                findNavController().navigate(R.id.action_FirstFragment_to_SecondFragment, bundle)
+            }
             //Thread.sleep(3000)
             println("end: ${Thread.currentThread().name}")
         }
