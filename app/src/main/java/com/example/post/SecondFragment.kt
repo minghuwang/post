@@ -4,15 +4,12 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.BaseExpandableListAdapter
 import androidx.fragment.app.Fragment
-import androidx.navigation.fragment.findNavController
+import androidx.fragment.app.viewModels
+import com.example.post.adapters.CustomExpandableListAdapter
 import com.example.post.databinding.FragmentSecondBinding
-import com.google.gson.Gson
 
-
-/**
- * A simple [Fragment] subclass as the second destination in the navigation.
- */
 data class Note(
     val userId: Int,
     val id: Int,
@@ -33,70 +30,62 @@ class SecondFragment : Fragment() {
     private var _binding: FragmentSecondBinding? = null
     private val binding get() = _binding!!
 
-    var listDataHeader: ArrayList<String> = arrayListOf()
-    //var listDataNotes: HashMap<String, List<String>>? = hashMapOf()
+    var adapter: BaseExpandableListAdapter? = null
+
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
         _binding = FragmentSecondBinding.inflate(inflater, container, false)
-        val gson = Gson()
-        var bundle = getArguments()
-        var notesByte = bundle!!.getByteArray("notes")
-        val notesStr = String(notesByte!!)
-        var notes = gson.fromJson(notesStr, Array<Note>::class.java).asList()
+        // Create a ViewModel the first time the system calls an activity's onCreate() method.
+        // Re-created activities receive the same MyViewModel instance created by the first activity.
 
-        for (i in 0 until notes.size - 1) {
+        // Use the 'by viewModels()' Kotlin property delegate
+        // from the activity-ktx artifact
+        val postViewModel: PostViewModel by viewModels()
+        //Or through this way to get postViewModel
+        // var postViewModel = ViewModelProvider(this).get(PostViewModel::class.java)
 
-            var id = "id:" + notes[i].id.toString()
-            var userId = "userId:" + notes[i].userId.toString()
-            var title = "title: " + notes[i].title
-            var body = "body" + notes[i].body
+        var listDataHeader = listOf("")
+        var listDataChild = hashMapOf("" to listOf(""))
+        var adapter =  CustomExpandableListAdapter(requireContext(), listDataHeader, listDataChild)
 
-            var header = id + "\n" + userId + "\n" + title + "\n" + body
-            listDataHeader.add(header)
-            //listDataNotes!!.put(notes[i].id.toString(), listDataHeader) //for future use
-        }
+//        postViewModel.getNotes().observe(viewLifecycleOwner, { liveDataNotes ->
+//            print("Find notes change")
+//            listDataHeader = liveDataNotes
+//            println("listDataHeader begin")
+//            println(listDataHeader[0])
+//            println("listDataHeader end")
+//            adapter =
+//                CustomExpandableListAdapter(requireContext(), listDataHeader, listDataChild)
+//            if (binding.myListView.getExpandableListAdapter() == null) {
+//                binding.myListView.setAdapter(adapter)
+//            }
+//            adapter.notifyDataSetChanged()
+//        })
+        postViewModel.getComments()
+            .observe(viewLifecycleOwner, { map ->
+                print("Find comments change")
+                listDataChild = map
 
-        var commentsByte = bundle!!.getByteArray("comments")
-        val commentsStr = String(commentsByte!!)
-        var comments = gson.fromJson(commentsStr, Array<Comment>::class.java).asList()
-        var listDataChild = hashMapOf<String, List<String>>() //comments
-        //postId start from 1
-        var postId = comments[0].postId
-        var commentList: MutableList<String> = mutableListOf()
-        for (i in 0 until comments.size - 1) {
-            //Each time get post id, if it is the same as previous one, add into one commentList
-            var currentPostId = comments[i].postId
-
-            if (postId == currentPostId) {
-                //comment includes postId, id, name, email, body
-                var comment =
-                    "postId: " + currentPostId.toString() + "\n" + "id: " + comments[i].id.toString() + "\n" + "name: " + comments[i].name + "\n" + "email: " + comments[i].email + "\n" + "body: " + comments[i].body
-                commentList.add(comment)
-            } else {
-                listDataChild.put(postId.toString(), commentList)
-                postId = currentPostId
-                commentList = mutableListOf()
-            }
-        }
-
-        val adapter = CustomExpandableListAdapter(requireContext(), listDataHeader, listDataChild)
-        //ListAdapter(requireContext(), android.R.layout.simple_expandable_list_item_1, listItems)
-        binding.myListView.setAdapter(adapter)
+                adapter =
+                    CustomExpandableListAdapter(requireContext(), postViewModel.getNotes().value!!, listDataChild)
+                if (binding.myListView.getExpandableListAdapter() == null) {
+                    binding.myListView.setAdapter(adapter)
+                }
+                adapter.notifyDataSetChanged()
+            })
         binding.buttonSecond.setOnClickListener {
-            findNavController().navigate(R.id.action_SecondFragment_to_FirstFragment)
+            postViewModel.getData()
+            // findNavController().navigate(R.id.action_SecondFragment_to_FirstFragment)
         }
         return binding.root
-    }
-
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
-
     }
 
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
     }
+
+
 }
